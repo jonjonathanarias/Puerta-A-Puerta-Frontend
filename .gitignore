@@ -1,0 +1,38 @@
+# === Node / Vite (web-admin) ===
+apps/web-admin/node_modules/
+apps/web-admin/dist/
+apps/web-admin/.vite/
+apps/web-admin/*.log
+apps/web-admin/npm-debug.log*
+apps/web-admin/yarn-debug.log*
+apps/web-admin/yarn-error.log*
+apps/web-admin/pnpm-debug.log*
+apps/web-admin/package-lock.json
+
+# === Flutter / Dart (mobile-app) ===
+apps/mobile-app/build/
+apps/mobile-app/.dart_tool/
+apps/mobile-app/.flutter-plugins
+apps/mobile-app/.flutter-plugins-dependencies
+apps/mobile-app/.packages
+apps/mobile-app/.pub-cache/
+apps/mobile-app/pubspec.lock
+
+# === Shared packages (api-client / shared-utils) ===
+packages/*/node_modules/
+packages/*/dist/
+packages/*/*.log
+packages/*/package-lock.json
+
+# === IDE / Editor ===
+.idea/
+.vscode/
+*.iml
+
+# === OS files ===
+.DS_Store
+Thumbs.db
+
+# === Coverage / Testing ===
+coverage/
+s
