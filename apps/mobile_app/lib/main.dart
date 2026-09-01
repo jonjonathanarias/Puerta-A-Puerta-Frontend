@@ -27,8 +27,7 @@ void main() {
   runApp(
     MyApp(
       authRepository: authRepository,
-      storage: storage,
-    ),
+      storage: storage,    ),
   );
 }
 

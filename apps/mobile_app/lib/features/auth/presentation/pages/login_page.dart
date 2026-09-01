@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
+import '../../../cliente/presentation/pages/catalogo_page.dart';
+import '../../../repartidor/presentation/pages/hoja_ruta_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -47,7 +49,15 @@ class _LoginPageState extends State<LoginPage> {
                   backgroundColor: Colors.green,
                 ),
               );
-              // TODO: Navegar a la pantalla principal (Cliente o Repartidor)
+
+              // Redirección condicional según el rol extraído del JWT
+              final Widget targetPage = state.role == 'repartidor'
+                  ? const HojaRutaPage()
+                  : const CatalogoPage();
+
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => targetPage),
+              );
             } else if (state is AuthFailure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
