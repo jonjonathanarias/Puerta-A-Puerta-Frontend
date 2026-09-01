@@ -13,11 +13,12 @@ class AuthLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
   final String token;
+  final String role;
 
-  const AuthAuthenticated({required this.token});
+  const AuthAuthenticated({required this.token, required this.role});
 
   @override
-  List<Object?> get props => [token];
+  List<Object?> get props => [token, role];
 }
 
 class AuthUnauthenticated extends AuthState {}
