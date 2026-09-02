@@ -5,4 +5,11 @@ abstract class CatalogoEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class CargarProductosEvent extends CatalogoEvent {}
+class CargarProductosEvent extends CatalogoEvent {
+  final String localId;
+
+  CargarProductosEvent({required this.localId});
+
+  @override
+  List<Object?> get props => [localId];
+}

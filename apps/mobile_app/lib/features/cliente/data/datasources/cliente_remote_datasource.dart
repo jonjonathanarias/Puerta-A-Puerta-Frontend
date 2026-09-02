@@ -1,36 +1,74 @@
 import 'package:dio/dio.dart';
+
+import '../../../../core/api/api_client.dart';
 import '../models/producto_model.dart';
 
 abstract class ClienteRemoteDataSource {
-  Future<List<ProductoModel>> getProductos();
-  Future<void> crearPedido(List<Map<String, dynamic>> items);
+  Future<List<ProductoModel>> getProductosPorLocal(String localId);
+  Future<List<dynamic>> getLocalesCercanos({
+    required double lat,
+    required double lng,
+  });
+  Future<void> crearPedido(Map<String, dynamic> pedidoPayload);
 }
 
 class ClienteRemoteDataSourceImpl implements ClienteRemoteDataSource {
-  final Dio dio;
+  final ApiClient apiClient;
 
-  ClienteRemoteDataSourceImpl({required this.dio});
+  ClienteRemoteDataSourceImpl({required this.apiClient});
 
   @override
-  Future<List<ProductoModel>> getProductos() async {
+  Future<List<ProductoModel>> getProductosPorLocal(String localId) async {
     try {
-      final response = await dio.get('/api/v1/productos');
-      final list = response.data as List;
-      return list.map((e) => ProductoModel.fromJson(e)).toList();
+      final response = await apiClient.dio.get('/locales/$localId/productos');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> productosJson = response.data['data']['productos'];
+
+        return productosJson
+            .map((json) => ProductoModel.fromJson(json))
+            .toList();
+      } else {
+        throw Exception('Error al obtener productos');
+      }
     } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Error al cargar productos');
+      throw Exception(
+        e.response?.data['message'] ?? 'Error al obtener productos del local',
+      );
     }
   }
 
   @override
-  Future<void> crearPedido(List<Map<String, dynamic>> items) async {
+  Future<List<dynamic>> getLocalesCercanos({
+    required double lat,
+    required double lng,
+  }) async {
     try {
-      await dio.post(
-        '/api/v1/pedidos',
-        data: {'items': items},
+      final response = await apiClient.dio.get(
+        '/locales/cercanos',
+        queryParameters: {'lat': lat, 'lng': lng},
       );
+
+      if (response.statusCode == 200) {
+        return response.data['data']['locales'] ?? [];
+      } else {
+        throw Exception('Error al obtener locales cercanos');
+      }
     } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Error al realizar el pedido');
+      throw Exception(
+        e.response?.data['message'] ?? 'Error al conectar con el servidor',
+      );
+    }
+  }
+
+  @override
+  Future<void> crearPedido(Map<String, dynamic> pedidoPayload) async {
+    try {
+      await apiClient.dio.post('/pedidos', data: pedidoPayload);
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Error al registrar el pedido',
+      );
     }
   }
 }

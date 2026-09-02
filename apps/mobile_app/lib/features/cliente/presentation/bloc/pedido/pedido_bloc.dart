@@ -10,7 +10,12 @@ class PedidoBloc extends Bloc<PedidoEvent, PedidoState> {
     on<CrearPedidoEvent>((event, emit) async {
       emit(PedidoLoading());
       try {
-        await clienteRepository.crearPedido(event.items);
+        final Map<String, dynamic> pedidoPayload = {
+          'localId': event.localId,
+          'items': event.items,
+        };
+
+        await clienteRepository.crearPedido(pedidoPayload);
         emit(PedidoExitoso());
       } catch (e) {
         emit(PedidoError(mensaje: e.toString().replaceAll('Exception: ', '')));

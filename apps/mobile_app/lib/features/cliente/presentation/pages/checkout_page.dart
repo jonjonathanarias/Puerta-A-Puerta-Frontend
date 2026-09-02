@@ -7,8 +7,13 @@ import '../bloc/pedido/pedido_state.dart';
 
 class CheckoutPage extends StatelessWidget {
   final Map<Producto, int> carrito;
+  final String localId;
 
-  const CheckoutPage({super.key, required this.carrito});
+  const CheckoutPage({
+    super.key,
+    required this.carrito,
+    this.localId = '949c6205-f5aa-469e-a9c7-2da889d04a45',
+  });
 
   double get _totalPagar {
     return carrito.entries.fold(
@@ -26,7 +31,12 @@ class CheckoutPage extends StatelessWidget {
       };
     }).toList();
 
-    context.read<PedidoBloc>().add(CrearPedidoEvent(items: itemsPayload));
+    context.read<PedidoBloc>().add(
+      CrearPedidoEvent(
+        localId: localId,
+        items: itemsPayload,
+      ),
+    );
   }
 
   @override
@@ -44,7 +54,7 @@ class CheckoutPage extends StatelessWidget {
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.of(context).pop(true); // Retorna true para limpiar el carrito en la pantalla anterior
+            Navigator.of(context).pop(true);
           } else if (state is PedidoError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -67,7 +77,9 @@ class CheckoutPage extends StatelessWidget {
 
                     return ListTile(
                       title: Text(producto.nombre),
-                      subtitle: Text('Cantidad: $cantidad x \$${producto.precio.toStringAsFixed(2)}'),
+                      subtitle: Text(
+                        'Cantidad: $cantidad x \$${producto.precio.toStringAsFixed(2)}',
+                      ),
                       trailing: Text(
                         '\$${(producto.precio * cantidad).toStringAsFixed(2)}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -88,7 +100,11 @@ class CheckoutPage extends StatelessWidget {
                     ),
                     Text(
                       '\$${_totalPagar.toStringAsFixed(2)}',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
                     ),
                   ],
                 ),
@@ -109,7 +125,10 @@ class CheckoutPage extends StatelessWidget {
                         foregroundColor: Colors.white,
                       ),
                       onPressed: () => _confirmarPedido(context),
-                      child: const Text('CONFIRMAR Y ENVIAR PEDIDO', style: TextStyle(fontSize: 16)),
+                      child: const Text(
+                        'CONFIRMAR Y ENVIAR PEDIDO',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   );
                 },

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/entities/producto.dart';
 import '../../domain/repositories/cliente_repository.dart';
 import 'catalogo_event.dart';
 import 'catalogo_state.dart';
@@ -10,10 +11,17 @@ class CatalogoBloc extends Bloc<CatalogoEvent, CatalogoState> {
     on<CargarProductosEvent>((event, emit) async {
       emit(CatalogoLoading());
       try {
-        final productos = await clienteRepository.getProductos();
+        // La llamada retorna List<Producto> desde el dominio
+        final List<Producto> productos =
+        await clienteRepository.getProductosPorLocal(event.localId);
+
         emit(CatalogoLoaded(productos: productos));
       } catch (e) {
-        emit(CatalogoError(meassage: e.toString().replaceAll('Exception: ', '')));
+        emit(
+          CatalogoError(
+            mensaje: e.toString().replaceAll('Exception: ', ''),
+          ),
+        );
       }
     });
   }

@@ -8,12 +8,20 @@ class ClienteRepositoryImpl implements ClienteRepository {
   ClienteRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<Producto>> getProductos() async {
-    return await remoteDataSource.getProductos();
+  Future<List<Producto>> getProductosPorLocal(String localId) async {
+    return await remoteDataSource.getProductosPorLocal(localId);
   }
 
   @override
-  Future<void> crearPedido(List<Map<String, dynamic>> items) async {
-    return await remoteDataSource.crearPedido(items);
+  Future<List<dynamic>> getLocalesCercanos({
+    required double lat,
+    required double lng,
+  }) async {
+    return await remoteDataSource.getLocalesCercanos(lat: lat, lng: lng);
+  }
+
+  @override
+  Future<void> crearPedido(Map<String, dynamic> pedidoPayload) async {
+    await remoteDataSource.crearPedido(pedidoPayload);
   }
 }

@@ -11,7 +11,7 @@ class CatalogoInitial extends CatalogoState {}
 class CatalogoLoading extends CatalogoState {}
 
 class CatalogoLoaded extends CatalogoState {
-  final List<Producto> productos;
+  final List<Producto> productos; // Usa la entidad de dominio
 
   CatalogoLoaded({required this.productos});
 
@@ -20,10 +20,10 @@ class CatalogoLoaded extends CatalogoState {
 }
 
 class CatalogoError extends CatalogoState {
-  final String meassage;
+  final String mensaje;
 
-  CatalogoError({required this.meassage});
+  CatalogoError({required this.mensaje});
 
   @override
-  List<Object?> get props => [meassage];
+  List<Object?> get props => [mensaje];
 }

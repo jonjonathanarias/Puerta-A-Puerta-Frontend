@@ -36,6 +36,18 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Widget _obtenerPaginaSegunRol(String role) {
+    if (role == 'repartidor') {
+      return const HojaRutaPage();
+    } else {
+      // Si el cliente no ha seleccionado un local aún, pasamos un localId por defecto
+      // o redirigimos a la pantalla de selección de locales.
+      return const CatalogoPage(
+        localId: '3fa85f64-5717-4562-b3fc-2c963f66afa6', // Sustituir por ID seleccionado dinámicamente
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,10 +62,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               );
 
-              // Redirección condicional según el rol extraído del JWT
-              final Widget targetPage = state.role == 'repartidor'
-                  ? const HojaRutaPage()
-                  : const CatalogoPage();
+              // Redirección condicional garantizando tipo Widget
+              final Widget targetPage = _obtenerPaginaSegunRol(state.role);
 
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (_) => targetPage),

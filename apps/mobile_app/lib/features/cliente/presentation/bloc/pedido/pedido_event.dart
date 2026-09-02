@@ -6,10 +6,14 @@ abstract class PedidoEvent extends Equatable {
 }
 
 class CrearPedidoEvent extends PedidoEvent {
+  final String localId;
   final List<Map<String, dynamic>> items;
 
-  CrearPedidoEvent({required this.items});
+  CrearPedidoEvent({
+    required this.localId,
+    required this.items,
+  });
 
   @override
-  List<Object?> get props => [items];
+  List<Object?> get props => [localId, items];
 }
