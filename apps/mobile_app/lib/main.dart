@@ -12,6 +12,8 @@ import 'features/cliente/data/datasources/cliente_remote_datasource.dart';
 import 'features/cliente/data/repositories/cliente_repository_impl.dart';
 import 'features/cliente/presentation/bloc/catalogo_bloc.dart';
 
+import 'features/cliente/presentation/bloc/pedido/pedido_bloc.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -64,6 +66,11 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (context) => CatalogoBloc(
+            clienteRepository: clienteRepository,
+          ),
+        ),
+        BlocProvider(
+          create: (context) => PedidoBloc(
             clienteRepository: clienteRepository,
           ),
         ),
