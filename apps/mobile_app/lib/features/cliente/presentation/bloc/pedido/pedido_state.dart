@@ -7,7 +7,11 @@ abstract class PedidoState extends Equatable {
 
 class PedidoInitial extends PedidoState {}
 class PedidoLoading extends PedidoState {}
-class PedidoExitoso extends PedidoState {}
+class PedidoExitoso extends PedidoState {
+  final String? pedidoId; // Agrega esta propiedad
+
+  PedidoExitoso({this.pedidoId});
+}
 
 class PedidoError extends PedidoState {
   final String mensaje;

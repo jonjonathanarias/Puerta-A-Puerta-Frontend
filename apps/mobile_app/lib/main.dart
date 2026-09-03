@@ -17,6 +17,7 @@ import 'features/auth/presentation/pages/login_page.dart';
 import 'features/cliente/data/datasources/cliente_remote_datasource.dart';
 import 'features/cliente/data/repositories/cliente_repository_impl.dart';
 import 'features/cliente/domain/repositories/cliente_repository.dart';
+import 'features/cliente/presentation/bloc/carrito_bloc.dart';
 import 'features/cliente/presentation/bloc/catalogo_bloc.dart';
 import 'features/cliente/presentation/bloc/pedido/pedido_bloc.dart';
 import 'features/cliente/presentation/pages/locales_page.dart';
@@ -29,7 +30,7 @@ void main() {
 
   const storage = FlutterSecureStorage();
 
-  // Cliente HTTP centralizado (contiene Dio + Interceptores JWT)
+  // Cliente HTTP centralizado
   final apiClient = ApiClient();
 
   // Auth Data Source & Repository
@@ -82,6 +83,9 @@ class MyApp extends StatelessWidget {
               authRepository: authRepository,
               storage: storage,
             )..add(AuthCheckRequested()),
+          ),
+          BlocProvider(
+            create: (context) => CarritoBloc(),
           ),
           BlocProvider(
             create: (context) => CatalogoBloc(
