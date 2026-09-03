@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
-import '../../../cliente/presentation/pages/catalogo_page.dart';
+
+// Importaciones de páginas corregidas
+import '../../../cliente/presentation/pages/locales_page.dart';
 import '../../../repartidor/presentation/pages/hoja_ruta_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -40,11 +42,8 @@ class _LoginPageState extends State<LoginPage> {
     if (role == 'repartidor') {
       return const HojaRutaPage();
     } else {
-      // Si el cliente no ha seleccionado un local aún, pasamos un localId por defecto
-      // o redirigimos a la pantalla de selección de locales.
-      return const CatalogoPage(
-        localId: '3fa85f64-5717-4562-b3fc-2c963f66afa6', // Sustituir por ID seleccionado dinámicamente
-      );
+      // Redireccionamos directamente a la selección de locales
+      return const LocalesPage();
     }
   }
 

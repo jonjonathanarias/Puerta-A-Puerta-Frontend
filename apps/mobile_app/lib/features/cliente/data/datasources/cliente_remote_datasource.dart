@@ -23,7 +23,14 @@ class ClienteRemoteDataSourceImpl implements ClienteRemoteDataSource {
       final response = await apiClient.dio.get('/locales/$localId/productos');
 
       if (response.statusCode == 200) {
-        final List<dynamic> productosJson = response.data['data']['productos'];
+        final data = response.data;
+        List<dynamic> productosJson = [];
+
+        if (data is Map<String, dynamic>) {
+          productosJson = data['data']?['productos'] ?? data['productos'] ?? [];
+        } else if (data is List) {
+          productosJson = data;
+        }
 
         return productosJson
             .map((json) => ProductoModel.fromJson(json))
@@ -45,12 +52,13 @@ class ClienteRemoteDataSourceImpl implements ClienteRemoteDataSource {
   }) async {
     try {
       final response = await apiClient.dio.get(
-        '/locales/cercanos',
+        '/locales',
         queryParameters: {'lat': lat, 'lng': lng},
       );
 
       if (response.statusCode == 200) {
-        return response.data['data']['locales'] ?? [];
+        // El JSON contiene la lista directo en 'data'
+        return response.data['data'] ?? [];
       } else {
         throw Exception('Error al obtener locales cercanos');
       }

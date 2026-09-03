@@ -4,136 +4,157 @@ import '../../domain/entities/producto.dart';
 import '../bloc/pedido/pedido_bloc.dart';
 import '../bloc/pedido/pedido_event.dart';
 import '../bloc/pedido/pedido_state.dart';
+import '../widgets/cliente_app_bar.dart';
 
-class CheckoutPage extends StatelessWidget {
-  final Map<Producto, int> carrito;
+class CheckoutPage extends StatefulWidget {
   final String localId;
+  final Map<Producto, int> itemsCarrito;
 
   const CheckoutPage({
     super.key,
-    required this.carrito,
-    this.localId = '949c6205-f5aa-469e-a9c7-2da889d04a45',
+    required this.localId,
+    required this.itemsCarrito,
   });
 
-  double get _totalPagar {
-    return carrito.entries.fold(
-      0.0,
-          (sum, entry) => sum + (entry.key.precio * entry.value),
-    );
+  @override
+  State<CheckoutPage> createState() => _CheckoutPageState();
+}
+
+class _CheckoutPageState extends State<CheckoutPage> {
+  final _direccionController = TextEditingController();
+  final _observacionesController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _direccionController.dispose();
+    _observacionesController.dispose();
+    super.dispose();
   }
 
-  void _confirmarPedido(BuildContext context) {
-    final itemsPayload = carrito.entries.map((entry) {
-      return {
-        'productoId': entry.key.id,
-        'cantidad': entry.value,
-        'precioUnitario': entry.key.precio,
-      };
-    }).toList();
+  double get _montoTotal => widget.itemsCarrito.entries
+      .fold(0, (sum, entry) => sum + (entry.key.precio * entry.value));
 
-    context.read<PedidoBloc>().add(
-      CrearPedidoEvent(
-        localId: localId,
-        items: itemsPayload,
-      ),
-    );
+  void _confirmarPedido() {
+    if (_formKey.currentState?.validate() ?? false) {
+      final itemsPayload = widget.itemsCarrito.entries.map((e) {
+        return {
+          'producto_id': e.key.id,
+          'cantidad': e.value,
+          'precio_unitario': e.key.precio,
+        };
+      }).toList();
+
+      // Disparar el evento con los parámetros explícitos
+      context.read<PedidoBloc>().add(
+        CrearPedidoEvent(
+          localId: widget.localId,
+          items: itemsPayload,
+          direccionEntrega: _direccionController.text.trim(),
+          observaciones: _observacionesController.text.trim(),
+          montoTotal: _montoTotal,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Resumen del Pedido'),
-      ),
+      appBar: const ClienteAppBar(titulo: 'Confirmar Pedido'),
       body: BlocListener<PedidoBloc, PedidoState>(
         listener: (context, state) {
           if (state is PedidoExitoso) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('¡Pedido enviado con éxito!'),
+                content: Text('¡Pedido registrado con éxito!'),
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.of(context).pop(true);
+            Navigator.of(context).popUntil((route) => route.isFirst);
           } else if (state is PedidoError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Error: ${state.mensaje}'),
-                backgroundColor: Colors.red,
+                content: Text(state.mensaje),
+                backgroundColor: Colors.redAccent,
               ),
             );
           }
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: carrito.length,
-                  itemBuilder: (context, index) {
-                    final producto = carrito.keys.elementAt(index);
-                    final cantidad = carrito[producto]!;
-
-                    return ListTile(
-                      title: Text(producto.nombre),
-                      subtitle: Text(
-                        'Cantidad: $cantidad x \$${producto.precio.toStringAsFixed(2)}',
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                const Text(
+                  'Resumen de Productos',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Card(
+                  child: Column(
+                    children: widget.itemsCarrito.entries
+                        .map(
+                          (entry) => ListTile(
+                        title: Text(entry.key.nombre),
+                        subtitle: Text('Cantidad: ${entry.value}'),
+                        trailing: Text(
+                          '\$${(entry.key.precio * entry.value).toStringAsFixed(2)}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      trailing: Text(
-                        '\$${(producto.precio * cantidad).toStringAsFixed(2)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                    )
+                        .toList(),
+                  ),
+                ),
+                const Divider(height: 32),
+                const Text(
+                  'Datos de Entrega',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _direccionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dirección de Entrega',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.location_on_outlined),
+                  ),
+                  validator: (val) =>
+                  val == null || val.isEmpty ? 'Ingresa una dirección' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _observacionesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Observaciones (Opcional)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.notes),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                BlocBuilder<PedidoBloc, PedidoState>(
+                  builder: (context, state) {
+                    if (state is PedidoLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    return ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: _confirmarPedido,
+                      child: Text(
+                        'FINALIZAR PEDIDO (\$${_montoTotal.toStringAsFixed(2)})',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     );
                   },
                 ),
-              ),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total:',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '\$${_totalPagar.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              BlocBuilder<PedidoBloc, PedidoState>(
-                builder: (context, state) {
-                  if (state is PedidoLoading) {
-                    return const CircularProgressIndicator();
-                  }
-
-                  return SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.blueAccent,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () => _confirmarPedido(context),
-                      child: const Text(
-                        'CONFIRMAR Y ENVIAR PEDIDO',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

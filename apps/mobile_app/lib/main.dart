@@ -19,7 +19,7 @@ import 'features/cliente/data/repositories/cliente_repository_impl.dart';
 import 'features/cliente/domain/repositories/cliente_repository.dart';
 import 'features/cliente/presentation/bloc/catalogo_bloc.dart';
 import 'features/cliente/presentation/bloc/pedido/pedido_bloc.dart';
-import 'features/cliente/presentation/pages/catalogo_page.dart';
+import 'features/cliente/presentation/pages/locales_page.dart';
 
 // Features: Repartidor
 import 'features/repartidor/presentation/pages/hoja_ruta_page.dart';
@@ -66,48 +66,56 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        BlocProvider(
-          create: (context) => AuthBloc(
-            authRepository: authRepository,
-            storage: storage,
-          )..add(AuthCheckRequested()),
+        RepositoryProvider<ClienteRepository>.value(
+          value: clienteRepository,
         ),
-        BlocProvider(
-          create: (context) => CatalogoBloc(
-            clienteRepository: clienteRepository,
-          ),
-        ),
-        BlocProvider(
-          create: (context) => PedidoBloc(
-            clienteRepository: clienteRepository,
-          ),
+        RepositoryProvider<AuthRepositoryImpl>.value(
+          value: authRepository,
         ),
       ],
-      child: MaterialApp(
-        title: 'Puerta a Puerta',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
-          useMaterial3: true,
-        ),
-        home: BlocBuilder<AuthBloc, AuthState>(
-          builder: (context, state) {
-            if (state is AuthAuthenticated) {
-              return state.role == 'repartidor'
-                  ? const HojaRutaPage()
-                  : const CatalogoPage(
-                localId: '949c6205-f5aa-469e-a9c7-2da889d04a45',
-              );
-            }
-            if (state is AuthLoading) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            return const LoginPage();
-          },
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => AuthBloc(
+              authRepository: authRepository,
+              storage: storage,
+            )..add(AuthCheckRequested()),
+          ),
+          BlocProvider(
+            create: (context) => CatalogoBloc(
+              clienteRepository: clienteRepository,
+            ),
+          ),
+          BlocProvider(
+            create: (context) => PedidoBloc(
+              clienteRepository: clienteRepository,
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          title: 'Puerta a Puerta',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+            useMaterial3: true,
+          ),
+          home: BlocBuilder<AuthBloc, AuthState>(
+            builder: (context, state) {
+              if (state is AuthAuthenticated) {
+                return state.role == 'repartidor'
+                    ? const HojaRutaPage()
+                    : const LocalesPage();
+              }
+              if (state is AuthLoading) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+              return const LoginPage();
+            },
+          ),
         ),
       ),
     );

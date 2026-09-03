@@ -1,15 +1,26 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  static const String baseUrl = 'http://10.0.2.2:3000/api/v1'; // 10.0.2.2 es el localhost para el emulador de Android Studio
-  final Dio dio = Dio(BaseOptions(
-    baseUrl: baseUrl,
-    headers: {'accept': '*/*', 'Content-Type': 'application/json'},
-  ));
+  static String get baseUrl {
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:3000/api/v1'; // Emulador Android
+    }
+    return 'http://localhost:3000/api/v1'; // Windows, macOS, Linux
+  }
+
+  late final Dio dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   ApiClient() {
+    dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        headers: {'accept': '*/*', 'Content-Type': 'application/json'},
+      ),
+    );
+
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
