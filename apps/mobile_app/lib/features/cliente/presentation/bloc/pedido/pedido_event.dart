@@ -1,17 +1,21 @@
+// pedido_event.dart
+
 abstract class PedidoEvent {}
 
 class CrearPedidoEvent extends PedidoEvent {
   final String localId;
-  final List<Map<String, dynamic>> items;
   final String direccionEntrega;
-  final String? observaciones;
-  final double montoTotal;
+  final String? notas;
+  final List<Map<String, dynamic>> items;
+  final double? latitud;
+  final double? longitud;
 
   CrearPedidoEvent({
     required this.localId,
-    required this.items,
     required this.direccionEntrega,
-    required this.montoTotal,
-    this.observaciones,
+    this.notas,
+    required this.items,
+    this.latitud,
+    this.longitud,
   });
 }
