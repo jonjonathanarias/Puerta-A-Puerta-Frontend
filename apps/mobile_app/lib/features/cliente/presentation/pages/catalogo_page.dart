@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../domain/entities/producto.dart';
 import '../bloc/carrito_bloc.dart';
 import '../bloc/catalogo_bloc.dart';
 import '../bloc/catalogo_event.dart';
@@ -39,7 +38,7 @@ class _CatalogoPageState extends State<CatalogoPage> {
         return Scaffold(
           appBar: ClienteAppBar(
             titulo: 'Catálogo de Productos',
-            accionesAdicionales: [
+            actions: [
               Stack(
                 alignment: Alignment.center,
                 children: [

@@ -42,7 +42,11 @@ void main() {
 
   // Cliente Data Source & Repository
   final clienteDataSource = ClienteRemoteDataSourceImpl(apiClient: apiClient);
-  final clienteRepository = ClienteRepositoryImpl(remoteDataSource: clienteDataSource);
+
+  final clienteRepository = ClienteRepositoryImpl(
+    remoteDataSource: clienteDataSource,
+    apiClient: apiClient, // Se inyecta apiClient para resolver el parámetro requerido
+  );
 
   runApp(
     MyApp(

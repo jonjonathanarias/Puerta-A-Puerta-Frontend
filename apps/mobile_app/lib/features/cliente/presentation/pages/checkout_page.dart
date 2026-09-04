@@ -13,10 +13,7 @@ import '../widgets/cliente_app_bar.dart';
 class CheckoutPage extends StatefulWidget {
   final String localId;
 
-  const CheckoutPage({
-    super.key,
-    required this.localId,
-  });
+  const CheckoutPage({super.key, required this.localId});
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
@@ -28,12 +25,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _formKey = GlobalKey<FormState>();
 
   bool _cargandoUbicacion = false;
+  double? _latitudActual;
+  double? _longitudActual;
 
-  // Historial simulado de direcciones guardadas del cliente
   final List<String> _historicoDirecciones = [
-    'Av. Siempreviva 742',
-    'Calle Falsa 123',
-    'Oficina Centro, Piso 4 B',
+    'Av. General Paz 250, Córdoba',
+    'Av. Colón 1234, Córdoba',
+    'Pueyrredón 500, Córdoba',
   ];
 
   @override
@@ -43,78 +41,45 @@ class _CheckoutPageState extends State<CheckoutPage> {
     super.dispose();
   }
 
-  // Método para obtener la ubicación GPS y convertirla a dirección
-  Future<void> _obtenerUbicacionActual() async {
+  Future<void> _obtenerUbicacionGPS() async {
     setState(() => _cargandoUbicacion = true);
-
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception('El servicio de ubicación está desactivado.');
-      }
+      if (!serviceEnabled) throw Exception('El GPS está desactivado.');
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          throw Exception('Permisos de ubicación denegados.');
+          throw Exception('Permiso de ubicación denegado.');
         }
       }
 
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception('Los permisos de ubicación están denegados permanentemente.');
-      }
-
-      // Obtener la posición GPS
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+
+      _latitudActual = position.latitude;
+      _longitudActual = position.longitude;
 
       try {
         final placemarks = await placemarkFromCoordinates(
           position.latitude,
           position.longitude,
         );
-
         if (placemarks.isNotEmpty) {
           final place = placemarks.first;
-
-          // Construimos la dirección de forma segura sin forzar nulos
-          final List<String> partesDireccion = [];
-          if (place.street != null && place.street!.isNotEmpty) {
-            partesDireccion.add(place.street!);
-          }
-          if (place.locality != null && place.locality!.isNotEmpty) {
-            partesDireccion.add(place.locality!);
-          }
-
-          final direccionFinal = partesDireccion.isNotEmpty
-              ? partesDireccion.join(', ')
-              : 'Ubicación GPS (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
-
-          setState(() {
-            _direccionController.text = direccionFinal;
-          });
-        } else {
-          setState(() {
-            _direccionController.text =
-            'Ubicación GPS (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
-          });
+          _direccionController.text =
+              '${place.street ?? ''}, ${place.locality ?? ''}'.trim();
         }
       } catch (_) {
-        // Si la geocodificación inversa falla (común en entorno desktop/desarrollo)
-        setState(() {
-          _direccionController.text =
-          'Ubicación GPS (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
-        });
+        _direccionController.text =
+        'Ubicación GPS (${position.latitude.toStringAsFixed(3)}, ${position.longitude.toStringAsFixed(3)})';
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.orange,
-          ),
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
         );
       }
     } finally {
@@ -122,76 +87,47 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  // Modal para seleccionar una dirección del historial
-  void _mostrarHistoricoDirecciones() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Seleccionar Dirección Guardada',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _historicoDirecciones.length,
-                  itemBuilder: (context, index) {
-                    final dir = _historicoDirecciones[index];
-                    return ListTile(
-                      leading: const Icon(Icons.history, color: Colors.blueAccent),
-                      title: Text(dir),
-                      onTap: () {
-                        setState(() {
-                          _direccionController.text = dir;
-                        });
-                        Navigator.pop(ctx);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  Future<void> _confirmarPedido(CarritoState carritoState) async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-  // checkout_page.dart
+    final direccion = _direccionController.text.trim();
 
-  void _confirmarPedido(CarritoState carritoState) {
-    if (_formKey.currentState?.validate() ?? false) {
-      // 1. Armamos los items respetando el DTO del backend
-      final itemsPayload = carritoState.items.entries.map((e) {
-        return {
-          'productoId': e.key.id,
-          'cantidad': e.value,
-        };
-      }).toList();
-
-      // 2. Disparamos el evento con los campos correctos
-      context.read<PedidoBloc>().add(
-        CrearPedidoEvent(
-          localId: widget.localId,
-          direccionEntrega: _direccionController.text.trim(),
-          notas: _observacionesController.text.trim(),
-          items: itemsPayload,
-          // Opcional: si guardaste las coordenadas GPS al presionar "Mi Ubicación"
-          // latitud: _latitudActual,
-          // longitud: _longitudActual,
-        ),
-      );
+    // Si las coordenadas son nulas (porque se escribió la dirección), intentamos geocodificar
+    if (_latitudActual == null || _longitudActual == null) {
+      try {
+        final locations = await locationFromAddress(direccion);
+        if (locations.isNotEmpty) {
+          _latitudActual = locations.first.latitude;
+          _longitudActual = locations.first.longitude;
+        }
+      } catch (_) {
+        // Fallback predeterminado (Centro de Córdoba) si la dirección escrita no da coordenadas
+        _latitudActual = -31.416;
+        _longitudActual = -64.185;
+      }
     }
+
+    final itemsPayload = carritoState.items.entries.map((e) {
+      return {
+        'productoId': e.key.id,
+        'cantidad': e.value,
+      };
+    }).toList();
+
+    if (!mounted) return;
+
+    context.read<PedidoBloc>().add(
+      CrearPedidoEvent(
+        localId: widget.localId,
+        direccionEntrega: direccion,
+        notas: _observacionesController.text.trim().isNotEmpty
+            ? _observacionesController.text.trim()
+            : null,
+        items: itemsPayload,
+        latitud: _latitudActual,
+        longitud: _longitudActual,
+      ),
+    );
   }
 
   @override
@@ -221,64 +157,72 @@ class _CheckoutPageState extends State<CheckoutPage> {
         },
         child: BlocBuilder<CarritoBloc, CarritoState>(
           builder: (context, carritoState) {
-            if (carritoState.items.isEmpty) {
-              return const Center(child: Text('El carrito está vacío'));
-            }
-
-            return Padding(
+            return SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
-                child: ListView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Resumen de Productos',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+                    const Text('Resumen de Productos',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Card(
                       child: Column(
                         children: carritoState.items.entries
-                            .map(
-                              (entry) => ListTile(
-                            title: Text(entry.key.nombre),
-                            subtitle: Text('Cantidad: ${entry.value}'),
-                            trailing: Text(
-                              '\$${(entry.key.precio * entry.value).toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
+                            .map((e) => ListTile(
+                          title: Text(e.key.nombre),
+                          subtitle: Text('Cantidad: ${e.value}'),
+                          trailing: Text(
+                            '\$${(e.key.precio * e.value).toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold),
                           ),
-                        )
+                        ))
                             .toList(),
                       ),
                     ),
-                    const Divider(height: 32),
-                    const Text(
-                      'Datos de Entrega',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+                    const SizedBox(height: 20),
+                    const Text('Datos de Entrega',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
-
-                    // Opciones rápidas de selección (GPS e Histórico)
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: _cargandoUbicacion ? null : _obtenerUbicacionActual,
-                            icon: _cargandoUbicacion
-                                ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                                : const Icon(Icons.my_location),
+                            onPressed: _cargandoUbicacion
+                                ? null
+                                : _obtenerUbicacionGPS,
+                            icon: const Icon(Icons.my_location),
                             label: const Text('Mi Ubicación'),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: _mostrarHistoricoDirecciones,
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (_) => ListView(
+                                  shrinkWrap: true,
+                                  children: _historicoDirecciones
+                                      .map((d) => ListTile(
+                                    title: Text(d),
+                                    onTap: () {
+                                      setState(() {
+                                        _direccionController.text = d;
+                                        _latitudActual = null;
+                                        _longitudActual = null;
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                  ))
+                                      .toList(),
+                                ),
+                              );
+                            },
                             icon: const Icon(Icons.history),
                             label: const Text('Historial'),
                           ),
@@ -286,20 +230,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ],
                     ),
                     const SizedBox(height: 12),
-
-                    // Campo de entrada libre / manual
                     TextFormField(
                       controller: _direccionController,
                       decoration: const InputDecoration(
                         labelText: 'Dirección de Entrega',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.location_on_outlined),
-                        hintText: 'Ingresa una dirección o selecciona una arriba',
                       ),
-                      validator: (val) =>
-                      val == null || val.isEmpty ? 'Ingresa una dirección' : null,
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Ingresa una dirección'
+                          : null,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     TextFormField(
                       controller: _observacionesController,
                       decoration: const InputDecoration(
@@ -308,28 +250,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         prefixIcon: Icon(Icons.notes),
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    BlocBuilder<PedidoBloc, PedidoState>(
-                      builder: (context, pedidoState) {
-                        if (pedidoState is PedidoLoading) {
-                          return const Center(child: CircularProgressIndicator());
-                        }
-                        return ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: () => _confirmarPedido(carritoState),
-                          child: Text(
-                            'FINALIZAR PEDIDO (\$${carritoState.montoTotal.toStringAsFixed(2)})',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        );
-                      },
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green),
+                        onPressed: () => _confirmarPedido(carritoState),
+                        child: Text(
+                          'FINALIZAR PEDIDO (\$${carritoState.montoTotal.toStringAsFixed(2)})',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 16),
+                        ),
+                      ),
                     ),
                   ],
                 ),

@@ -9,7 +9,7 @@ abstract class ClienteRemoteDataSource {
     required double lat,
     required double lng,
   });
-  Future<void> crearPedido(Map<String, dynamic> pedidoPayload);
+
 }
 
 class ClienteRemoteDataSourceImpl implements ClienteRemoteDataSource {

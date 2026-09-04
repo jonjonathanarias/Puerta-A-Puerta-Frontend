@@ -6,5 +6,6 @@ abstract class ClienteRepository {
     required double lng,
   });
   Future<List<Producto>> getProductosPorLocal(String localId);
-  Future<void> crearPedido(Map<String, dynamic> pedidoPayload);
+  Future<String> crearPedido(Map<String, dynamic> pedidoPayload);
+  Future<List<dynamic>> getMisPedidos();
 }

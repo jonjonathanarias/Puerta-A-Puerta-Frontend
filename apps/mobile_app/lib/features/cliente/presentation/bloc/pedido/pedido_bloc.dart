@@ -10,17 +10,18 @@ class PedidoBloc extends Bloc<PedidoEvent, PedidoState> {
     on<CrearPedidoEvent>((event, emit) async {
       emit(PedidoLoading());
       try {
-        final payload = {
+        final Map<String, dynamic> payload = {
           'localId': event.localId,
           'direccionEntrega': event.direccionEntrega,
-          'notas': event.notas,
           'items': event.items,
+          if (event.notas != null && event.notas!.trim().isNotEmpty)
+            'notas': event.notas!.trim(),
           if (event.latitud != null) 'latitud': event.latitud,
           if (event.longitud != null) 'longitud': event.longitud,
         };
 
-        await clienteRepository.crearPedido(payload);
-        emit(PedidoExitoso(pedidoId: 'N/A'));
+        final pedidoId = await clienteRepository.crearPedido(payload);
+        emit(PedidoExitoso(pedidoId: pedidoId));
       } catch (e) {
         emit(PedidoError(mensaje: e.toString().replaceAll('Exception: ', '')));
       }
